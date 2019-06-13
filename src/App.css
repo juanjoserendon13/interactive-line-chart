@@ -4,20 +4,38 @@
 
 .main-line {
   fill: none;
-  stroke: blue;
+  stroke: rgb(9, 153, 236);
   stroke-width: 2;
 }
+
+.user-line {
+  fill: none;
+  stroke: rgb(22, 228, 149);
+  stroke-width: 2;
+}
+
 .axis-x-line path {
   stroke: rgb(182, 182, 182);
   stroke-width: 2;
 }
-.axis-x-line line, .axis-y-line line {
+
+.axis-x-line line,
+.axis-y-line line {
   display: none;
 }
-.axis-x-line text, .axis-y-line text {
+
+.axis-x-line text,
+.axis-y-line text {
   color: rgb(136, 136, 136);
   font-size: 1rem;
 }
+
 .axis-y-line path {
   display: none;
+}
+
+.overlay {
+  cursor: pointer;
+  fill: none;
+  pointer-events: all;
 }

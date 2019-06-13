@@ -5,6 +5,7 @@ class LineChart extends Component {
   constructor(props) {
     super(props);
     this.svgReal = React.createRef();
+    this.userLine = [];
   }
 
   componentDidMount() {
@@ -57,10 +58,13 @@ class LineChart extends Component {
       });
     }
 
+    // Slice the main line
+    const lineSplited = mainLine.slice(0, 2);
+
     // MAIN LINE
     // Add the valueline path.
     svg.append('path')
-      .data([mainLine])
+      .data([lineSplited])
       .attr('class', 'main-line')
       .attr('d', valueline);
 
@@ -72,6 +76,44 @@ class LineChart extends Component {
       .call(d3.axisBottom(x)
         .tickValues(availableYears)
         .tickFormat(d3.format('.4')));
+
+    const focus = svg.append('g')
+      .attr('class', 'focus')
+      .attr('transform', `translate(${x(2016)},0)`)
+      .style('display', 'none');
+
+    focus.append('circle')
+      .attr('r', 4.5);
+
+    focus.append('text')
+      .attr('x', 9)
+      .attr('dy', '.35em');
+
+    // Overlay to handle mouse events
+    svg.append('rect')
+      .attr('class', 'overlay')
+      .attr('width', width - x(2016))
+      .attr('height', height)
+      .attr('transform', `translate(${x(2016)},0)`)
+      .on('mouseover', () => focus.style('display', null))
+      .on('mouseout', () => focus.style('display', 'none'))
+      .on('click', () => this.mouseMoveChart());
+  }
+
+  mouseMoveChart = (e) => {
+    const {
+      data,
+    } = this.props;
+    const overlay = d3.select('.overlay').node();
+    const bisectDate = d3.bisector(d => d.year).left;
+    console.log(overlay);
+    console.log(d3.mouse(overlay));
+
+    // const x0 = x.invert(d3.mouse(e));
+    // const i = bisectDate(data, x0, 1);
+    // const d0 = data[i - 1];
+    // const d1 = data[i];
+    // const d = x0 - d0.year > d1.year - x0 ? d1 : d0;
   }
 
   render() {
