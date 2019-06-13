@@ -2,32 +2,22 @@
   text-align: center;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
-  pointer-events: none;
+.main-line {
+  fill: none;
+  stroke: blue;
+  stroke-width: 2;
 }
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.axis-x-line path {
+  stroke: rgb(182, 182, 182);
+  stroke-width: 2;
 }
-
-.App-link {
-  color: #61dafb;
+.axis-x-line line, .axis-y-line line {
+  display: none;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.axis-x-line text, .axis-y-line text {
+  color: rgb(136, 136, 136);
+  font-size: 1rem;
+}
+.axis-y-line path {
+  display: none;
 }
