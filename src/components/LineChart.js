@@ -6,6 +6,9 @@ class LineChart extends Component {
     super(props);
     this.svgReal = React.createRef();
     this.userLine = [];
+    this.yourDataSel = null;
+    this.clipElement = null;
+    this.clipAnimation = false;
   }
 
   componentDidMount() {
@@ -14,16 +17,22 @@ class LineChart extends Component {
 
   createLineChart = () => {
     const {
-      data, type, idLine,
+      data, type, idLine, startYear,
     } = this.props;
+    // Get the data from the year where the user will start drawing
+    this.userLine = this.transformData();
+
     const margin = {
-      top: 20, right: 20, bottom: 40, left: 50,
+      top: 20,
+      right: 20,
+      bottom: 40,
+      left: 20,
     };
     const width = 250 - margin.left - margin.right;
     const height = 250 - margin.top - margin.bottom;
 
     // set the ranges
-    const x = d3.scaleTime().range([0, width]);
+    const x = d3.scaleLinear().range([0, width]);
     const y = d3.scaleLinear().range([height, 0]);
 
     // define the line
@@ -31,17 +40,26 @@ class LineChart extends Component {
       .x(d => x(d.year))
       .y(d => y(d[type]));
 
+    // define the area
+    const valueArea = d3.area()
+      .x(d => x(d.year))
+      .y0(d => y(d[type]))
+      .y1(height);
+
     // select the svg in the dom and give it some margins
-    const svg = d3.select(this.svgReal.current)
+    const svg = d3
+      .select(this.svgReal.current)
+      .attr('class', 'lineChart')
       .attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom)
       .append('g')
-      .attr('transform',
-        `translate(${margin.left},${margin.top})`);
+      .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Get the max and min values of the databases
     const dataYMax = d3.max(data, d => d[type]);
     const dataYMin = d3.min(data, d => d[type]);
+
+    const dataXMax = d3.max(data, d => d.year);
 
     // Scale the range of the data depending on the max and min values found it.
     x.domain(d3.extent(data, d => d.year));
@@ -58,62 +76,92 @@ class LineChart extends Component {
       });
     }
 
-    // Slice the main line
-    const lineSplited = mainLine.slice(0, 2);
+    // Create the clip container
+    this.clipElement = svg.append('clipPath')
+      .attr('id', 'clip')
+      .append('rect')
+      .attr('width', x(startYear))
+      .attr('height', height);
 
+    // Attach the clip path to the clip container
+    const correctSel = svg.append('g').attr('clip-path', 'url(#clip)');
+    // MAIN AREA
+    correctSel.append('path')
+      .data([mainLine])
+      .attr('class', 'area')
+      .attr('d', valueArea);
     // MAIN LINE
-    // Add the valueline path.
-    svg.append('path')
-      .data([lineSplited])
-      .attr('class', 'main-line')
+    correctSel.append('path')
+      .data([mainLine])
+      .attr('class', 'line')
       .attr('d', valueline);
+
+    // USER LINE
+    this.yourDataSel = svg.append('path').attr('class', 'your-line');
 
     const availableYears = [2015, 2016, 2017, 2018, 2019];
     // Add the X Axis
     svg.append('g')
       .attr('class', 'axis-x-line')
-      .attr('transform', `translate(0,${height + 15})`)
+      .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(x)
         .tickValues(availableYears)
         .tickFormat(d3.format('.4')));
 
-    const focus = svg.append('g')
-      .attr('class', 'focus')
-      .attr('transform', `translate(${x(2016)},0)`)
-      .style('display', 'none');
-
-    focus.append('circle')
-      .attr('r', 4.5);
-
-    focus.append('text')
-      .attr('x', 9)
-      .attr('dy', '.35em');
-
     // Overlay to handle mouse events
     svg.append('rect')
       .attr('class', 'overlay')
-      .attr('width', width - x(2016))
+      .attr('width', width)
       .attr('height', height)
-      .attr('transform', `translate(${x(2016)},0)`)
-      .on('mouseover', () => focus.style('display', null))
-      .on('mouseout', () => focus.style('display', 'none'))
-      .on('click', () => this.mouseMoveChart());
-  }
+      .call(this.mouseDragLine(x, y, dataXMax, valueline));
+  };
 
-  mouseMoveChart = (e) => {
-    const {
-      data,
-    } = this.props;
+  mouseDragLine = (x, y, dataXMax, line) => d3.drag().on('drag', () => {
+    const { type, startYear } = this.props;
+
     const overlay = d3.select('.overlay').node();
-    const bisectDate = d3.bisector(d => d.year).left;
-    console.log(overlay);
-    console.log(d3.mouse(overlay));
+    const mousePos = d3.mouse(overlay);
+    const year = this.clampFunc(startYear + 1, dataXMax, x.invert(mousePos[0]));
+    const newVal = this.clampFunc(0, y.domain()[1], y.invert(mousePos[1]));
 
-    // const x0 = x.invert(d3.mouse(e));
-    // const i = bisectDate(data, x0, 1);
-    // const d0 = data[i - 1];
-    // const d1 = data[i];
-    // const d = x0 - d0.year > d1.year - x0 ? d1 : d0;
+    // Conditionals to evaluate which point will be drawed in the chart
+    this.userLine = this.userLine.map((d) => {
+      console.log(d.year, year);
+      if (Math.abs(d.year - year) < 0.5) return { ...d, [type]: newVal, defined: true };
+      return d;
+    });
+    // Draw the new user line according with the mouse selections
+    this.yourDataSel
+      .data([this.userLine])
+      .attr('d', line.defined(d => d.defined));
+
+    // If all the available point were drawed by the user, animate the clip path
+    // and show the original line
+    if (!this.clipAnimation && d3.mean(this.userLine, d => d.defined) === 1) {
+      this.clipAnimation = true;
+      this.clipElement.transition().duration(1000).attr('width', x(dataXMax));
+    }
+  });
+
+  /**
+   * Return the corresponding year value according with the thresholds
+   */
+  clampFunc = (a, b, c) => Math.max(a, Math.min(b, c));
+
+  /**
+   * Add a property to each data element
+   * if the element is the starting point of the user line, set it to true
+   */
+  transformData = () => {
+    const { data, startYear } = this.props;
+    return data
+      .map((d) => {
+        if (d.year === startYear) {
+          return { ...d, defined: true };
+        }
+        return { ...d, defined: 0 };
+      })
+      .filter(d => d.year >= startYear);
   }
 
   render() {

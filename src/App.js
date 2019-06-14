@@ -34,7 +34,7 @@ function App() {
   return (
     <div className="App">
       <Suspense fallback={<div>loading...</div>}>
-        <LineChart type="value" data={lineData} idLine={1} />
+        <LineChart type="value" data={lineData} idLine={1} startYear={2016} />
       </Suspense>
     </div>
   );

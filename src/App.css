@@ -2,16 +2,21 @@
   text-align: center;
 }
 
-.main-line {
-  fill: none;
-  stroke: rgb(9, 153, 236);
-  stroke-width: 2;
+.area {
+  fill: #eee;
 }
 
-.user-line {
+.line {
   fill: none;
-  stroke: rgb(22, 228, 149);
-  stroke-width: 2;
+  stroke: black;
+  stroke-width: 3;
+}
+
+.your-line {
+  fill: none;
+  stroke: rgb(9, 153, 236);
+  stroke-width: 3;
+  stroke-dasharray: 5 5;
 }
 
 .axis-x-line path {
