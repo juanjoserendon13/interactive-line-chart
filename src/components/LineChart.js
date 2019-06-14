@@ -126,7 +126,6 @@ class LineChart extends Component {
 
     // Conditionals to evaluate which point will be drawed in the chart
     this.userLine = this.userLine.map((d) => {
-      console.log(d.year, year);
       if (Math.abs(d.year - year) < 0.5) return { ...d, [type]: newVal, defined: true };
       return d;
     });
