@@ -5,8 +5,8 @@ class LineChart extends Component {
   constructor(props) {
     super(props);
     this.svgReal = React.createRef();
-    this.userLine = [];
-    this.yourDataSel = null;
+    this.userDataLine = [];
+    this.youDrawIt = null;
     this.clipElement = null;
     this.clipAnimation = false;
   }
@@ -20,7 +20,7 @@ class LineChart extends Component {
       data, type, idLine, startYear,
     } = this.props;
     // Get the data from the year where the user will start drawing
-    this.userLine = this.transformData();
+    this.userDataLine = this.transformData();
 
     const margin = {
       top: 20,
@@ -84,20 +84,20 @@ class LineChart extends Component {
       .attr('height', height);
 
     // Attach the clip path to the clip container
-    const correctSel = svg.append('g').attr('clip-path', 'url(#clip)');
+    const clipPath = svg.append('g').attr('clip-path', 'url(#clip)');
     // MAIN AREA
-    correctSel.append('path')
+    clipPath.append('path')
       .data([mainLine])
       .attr('class', 'area')
       .attr('d', valueArea);
     // MAIN LINE
-    correctSel.append('path')
+    clipPath.append('path')
       .data([mainLine])
       .attr('class', 'line')
       .attr('d', valueline);
 
     // USER LINE
-    this.yourDataSel = svg.append('path').attr('class', 'your-line');
+    this.youDrawIt = svg.append('path').attr('class', 'your-line');
 
     const availableYears = [2015, 2016, 2017, 2018, 2019];
     // Add the X Axis
@@ -125,18 +125,18 @@ class LineChart extends Component {
     const newVal = this.clampFunc(0, y.domain()[1], y.invert(mousePos[1]));
 
     // Conditionals to evaluate which point will be drawed in the chart
-    this.userLine = this.userLine.map((d) => {
+    this.userDataLine = this.userDataLine.map((d) => {
       if (Math.abs(d.year - year) < 0.5) return { ...d, [type]: newVal, defined: true };
       return d;
     });
     // Draw the new user line according with the mouse selections
-    this.yourDataSel
-      .data([this.userLine])
+    this.youDrawIt
+      .data([this.userDataLine])
       .attr('d', line.defined(d => d.defined));
 
     // If all the available point were drawed by the user, animate the clip path
     // and show the original line
-    if (!this.clipAnimation && d3.mean(this.userLine, d => d.defined) === 1) {
+    if (!this.clipAnimation && d3.mean(this.userDataLine, d => d.defined) === 1) {
       this.clipAnimation = true;
       this.clipElement.transition().duration(1000).attr('width', x(dataXMax));
     }
