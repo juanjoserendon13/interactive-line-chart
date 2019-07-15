@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import * as d3 from 'd3';
+import marginConvention from '../lib/marginConvention';
 
 class LineChart extends Component {
   constructor(props) {
@@ -21,19 +22,31 @@ class LineChart extends Component {
     } = this.props;
     // Get the data from the year where the user will start drawing
     this.userDataLine = this.transformData();
-
+    const width = 250;
+    const height = 250;
     const margin = {
-      top: 20,
+      top: 30,
       right: 20,
-      bottom: 40,
+      bottom: 50,
       left: 20,
     };
-    const width = 250 - margin.left - margin.right;
-    const height = 250 - margin.top - margin.bottom;
+    const svgContainer = d3.select(this.svgReal.current);
+    // Get the dom element
+    const containerDiv = document.getElementById('line-chart');
+    console.log(containerDiv.offsetWidth);
+
+    // Set the initial dimensions of the svg and generate scales
+    const { svg, innerWidth, innerHeight } = marginConvention(svgContainer, {
+      width: containerDiv.offsetWidth,
+      // height: containerDiv.offsetHeight,
+      height,
+      margin,
+      className: 'lineChart',
+    });
 
     // set the ranges
-    const x = d3.scaleLinear().range([0, width]);
-    const y = d3.scaleLinear().range([height, 0]);
+    const x = d3.scaleLinear().range([0, innerWidth]);
+    const y = d3.scaleLinear().range([innerHeight, 0]);
 
     // define the line
     const valueline = d3.line()
@@ -44,16 +57,16 @@ class LineChart extends Component {
     const valueArea = d3.area()
       .x(d => x(d.year))
       .y0(d => y(d[type]))
-      .y1(height);
+      .y1(innerHeight);
 
-    // select the svg in the dom and give it some margins
-    const svg = d3
+
+    /* const svg = d3
       .select(this.svgReal.current)
       .attr('class', 'lineChart')
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom)
+      .attr('width', innerWidth)
+      .attr('height', innerHeight)
       .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
+      .attr('transform', `translate(${margin.left},${margin.top})`); */
 
     // Get the max and min values of the databases
     const dataYMax = d3.max(data, d => d[type]);
@@ -76,12 +89,13 @@ class LineChart extends Component {
       });
     }
 
-    // Create the clip container
+    // Create the clip container (translate -20px so the main line get displayed correctly)
     this.clipElement = svg.append('clipPath')
       .attr('id', 'clip')
       .append('rect')
       .attr('width', x(startYear))
-      .attr('height', height);
+      .attr('height', innerHeight + 20)
+      .attr('transform', 'translate(0, -20)');
 
     // Attach the clip path to the clip container
     const clipPath = svg.append('g').attr('clip-path', 'url(#clip)');
@@ -103,7 +117,7 @@ class LineChart extends Component {
     // Add the X Axis
     svg.append('g')
       .attr('class', 'axis-x-line')
-      .attr('transform', `translate(0,${height})`)
+      .attr('transform', `translate(0,${innerHeight})`)
       .call(d3.axisBottom(x)
         .tickValues(availableYears)
         .tickFormat(d3.format('.4')));
@@ -111,8 +125,8 @@ class LineChart extends Component {
     // Overlay to handle mouse events
     svg.append('rect')
       .attr('class', 'overlay')
-      .attr('width', width)
-      .attr('height', height)
+      .attr('width', innerWidth)
+      .attr('height', innerHeight)
       .call(this.mouseDragLine(x, y, dataXMax, valueline));
   };
 
@@ -165,7 +179,7 @@ class LineChart extends Component {
 
   render() {
     return (
-      <div className="line-chart">
+      <div id="line-chart">
         <svg ref={this.svgReal} />
       </div>
     );
