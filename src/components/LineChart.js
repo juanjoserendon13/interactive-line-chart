@@ -33,7 +33,6 @@ class LineChart extends Component {
     const svgContainer = d3.select(this.svgReal.current);
     // Get the dom element
     const containerDiv = document.getElementById('line-chart');
-    console.log(containerDiv.offsetWidth);
 
     // Set the initial dimensions of the svg and generate scales
     const { svg, innerWidth, innerHeight } = marginConvention(svgContainer, {
